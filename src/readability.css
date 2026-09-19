@@ -1,0 +1,67 @@
+/* Keep compact dashboard typography legible on laptop and mobile screens. */
+.sidebar{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#dce4d5 transparent}
+.sidebar>.brand,.sidebar>.workspace-switch,.sidebar>.view-switch,.sidebar>.nav-label,.sidebar>nav,.sidebar-bottom{flex-shrink:0}
+.brand small{white-space:nowrap;font-size:6.7px;letter-spacing:.85px}
+.page-heading p{color:#75816b;font-size:12px}
+.nav-item{font-size:13px;color:#687561}
+.nav-label{color:#7b8871}
+.breadcrumb,.city{font-size:12px}
+.greeting{color:#7a8d68}
+.scenario-banner strong{font-size:12px;color:#5b6844}
+.scenario-banner p{font-size:11px;color:#7e8969}
+.scenario-control>span{font-size:11px;color:#6c7d55}
+.stat-label{color:#77876a;font-size:11px}
+.stat-note{color:#839275;font-size:9px;line-height:1.5}
+.stat-value>span{color:#7f8b71}
+.section-heading h2{font-size:15px}
+.section-heading p{font-size:10px;color:#81916f}
+.location-field label{font-size:8px;color:#839471}
+.location-field input{font-size:12px;color:#536648}
+.ride-preferences>label,.ride-preferences>div,.ride-preferences select{font-size:11px;color:#71835e}
+.route-list-heading h3{font-size:12px}
+.route-card-top strong{font-size:11px}
+.route-tag{font-size:6px}
+.route-tag.recommended{color:#607e44}
+.route-via{font-size:9px;color:#83936e}
+.route-via span{font-size:7px;color:#929d83}
+.route-metrics{font-size:10px;color:#7a8c66}
+.route-metrics b{font-size:13px}
+.aqi-pill.good{color:#6f7c40}
+.aqi-pill.medium{color:#8e7435}
+.aqi-pill.bad{color:#a46c45}
+.route-note{font-size:8px;color:#738658}
+.simulation-footnote{font-size:8px;color:#8a9977}
+.map-location{font-size:10px}
+.map-layer{font-size:10px}
+.map-insight strong{font-size:11px}
+.map-insight p{font-size:9px;color:#7c8e68}
+.map-caption{font-size:8px;color:#718160}
+.map-legend{font-size:8px;color:#758361}
+.map-legend>span{font-size:8px}
+.selected-summary>div>span{font-size:8px;color:#839370}
+.selected-summary>div>strong{font-size:14px}
+.selected-summary .summary-duration>span{font-size:9px;color:#839370}
+.selected-summary .primary-button{font-size:11px}
+.forecast-caption{font-size:10px;color:#788b63}
+.forecast-bar>small{font-size:9px;color:#869674}
+.tip-panel p{font-size:11px;color:#83936e}
+.tip-panel button{font-size:11px}
+.breathe-card p{font-size:11px;color:#7a8d66}
+.breathe-card button{font-size:11px}
+footer{font-size:9px;color:#8b997b}
+.tiny-badge{color:#7c8b6b}
+.four .stat-label{font-size:10px}
+.zone-row strong{font-size:12px}
+.zone-row small,.muted{font-size:10px;color:#839171}
+.admin-advisory p{font-size:11px;color:#82936e}
+.admin-disclaimer{color:#75865f}
+th{font-size:11px;color:#849471}
+td,td strong{font-size:12px}
+td small{font-size:10px;color:#8b9a7a}
+.status-pill{font-size:10px;color:#718b53}
+.stat-badge{font-size:9px;top:49px}
+.stat-badge.orange{color:#a07544}
+@media(min-width:1280px){.ride-layout{grid-template-columns:330px minmax(0,1fr)}.route-card{padding:13px}.route-card-top strong{font-size:12px}.route-tag{font-size:6.5px}.planner-panel{padding:21px}.route-via{font-size:10px}.aqi-pill{font-size:9px}.route-metrics{font-size:11px}.route-note{font-size:8px}}
+@media(min-width:1500px){.ride-layout{grid-template-columns:350px minmax(0,1fr)}}
+@media(min-width:651px) and (max-width:1150px){.stat-label{font-size:9px;white-space:normal;line-height:1.4}.stat-note{font-size:8px}.stat-card{align-items:flex-start}.scenario-banner strong{font-size:10px}.scenario-banner p{font-size:9px}.scenario-control>span{font-size:9px}.route-card-top strong{font-size:10px}.route-tag{font-size:5px}.route-metrics{font-size:9px}.ride-preferences>label,.ride-preferences>div,.ride-preferences select{font-size:9px}.route-note{font-size:7px}.map-insight strong{font-size:9px}.map-insight p{font-size:8px}.map-legend,.map-legend>span,.map-caption{font-size:6px}.map-layer{font-size:8px}.selected-summary>div>strong{font-size:11px}.selected-summary .summary-duration>span{font-size:7px}.selected-summary .primary-button{font-size:10px}.brand small{font-size:5.7px;letter-spacing:.65px}}
+@media(max-width:650px){.page-heading p{font-size:11px}.scenario-banner strong{font-size:11px}.scenario-banner p{font-size:10px}.scenario-control>span{font-size:11px}.stat-label{font-size:9px;min-height:28px}.stat-note{font-size:8px}.stat-value>span{font-size:8px}.stat-value{font-size:23px}.ride-preferences>label,.ride-preferences>div,.ride-preferences select{font-size:10px}.route-card-top strong{font-size:13px}.route-tag{font-size:7px}.route-via{font-size:10px}.route-metrics{font-size:11px}.route-note{font-size:9px}.map-layer{font-size:9px}.map-location{font-size:9px}.map-location>span:last-child{font-size:7px}.map-insight strong{font-size:10px}.map-insight p{font-size:8px}.map-caption{font-size:7px}.map-legend,.map-legend>span{font-size:7px}.selected-summary>div>strong{font-size:13px}.selected-summary .summary-duration>span{font-size:7px}.selected-summary .primary-button{font-size:12px}footer{font-size:7px}.brand small{font-size:6.7px;letter-spacing:.85px}.breadcrumb{font-size:10px}.four .stat-note{font-size:9px}.air-zones .stat-label{font-size:10px}.air-zones .stat-note{font-size:8px}.forecast-caption{font-size:9px}}

@@ -1,0 +1,66 @@
+import { chromium } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+
+await mkdir('artifacts',{recursive:true});
+const browser=await chromium.launch({executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000}});
+const errors=[];
+page.on('pageerror',error=>errors.push(error.name));
+const origin={lat:28.5245,lng:77.2066,name:'Malviya Nagar, Delhi'};
+const destination={lat:28.7149,lng:77.1164,name:'Rohini, New Delhi'};
+const path=[{lat:28.5245,lng:77.2066},{lat:28.64,lng:77.18},{lat:28.7149,lng:77.1164}];
+const alt=[path[0],{lat:28.6,lng:77.11},path[2]];
+const fixture={trip_id:'test-trip',origin,destination,standard_route:path,green_route:alt,standard_route_id:'route-0',green_route_id:'route-1',recommended_route_id:'route-1',lower_aqi_percent:20,exposure_reduction_percent:12,aqi_standard:'US',aqi_source:'Open-Meteo / CAMS',ranking_engine:'Neo4j Cypher',high_aqi_threshold:200,graph:{candidate_routes:2,samples:20,air_zones:2},warnings:['Test fixture: model estimates are not street-level measurements.'],routes:[
+{id:'route-0',name:'Standard route',description:'via Ring Road',coordinates:path,duration_seconds:3000,distance_meters:27000,average_aqi:150,high_aqi_minutes:0,eligible:true,samples:[]},
+{id:'route-1',name:'AQI-weighted route',description:'via Outer Ring Road',coordinates:alt,duration_seconds:3300,distance_meters:30000,average_aqi:120,high_aqi_minutes:0,eligible:true,samples:[]}]};
+try{
+  await page.route('**/api/city-aqi',route=>route.fulfill({json:{aqi:118,standard:'US',observed_at:new Date().toISOString(),source:'Open-Meteo / CAMS'}}));
+  let sent;
+  await page.route('**/api/calculate-route',async route=>{sent=route.request().postDataJSON();await route.fulfill({json:fixture})});
+  await page.goto(process.env.FRONTEND_URL||'http://localhost:5173',{waitUntil:'networkidle'});
+  await page.getByRole('heading',{name:'Your next ride, a little cleaner.'}).waitFor();
+  assert.match(await page.title(),/svas-aasrav/);
+  assert.match(await page.locator('.stats-grid').innerText(),/118/);
+  await page.getByRole('combobox',{name:'PICKUP LOCATION'}).fill('Malviya Nagar, Delhi');
+  await page.getByRole('button',{name:'Show my ride',exact:true}).click();
+  await page.locator('.graph-proof').waitFor();
+  await page.locator('.live-endpoint').first().waitFor({timeout:45000});
+  assert.equal(await page.locator('.map-service-error,.map-error').count(),0);
+  assert.equal(sent.pickup,'Malviya Nagar, Delhi');
+  assert.equal(sent.drop,'Rohini, New Delhi');
+  assert.equal(sent.travel_mode,'DRIVE');
+  assert.equal(sent.delivery_window_minutes,75);
+  assert.equal(await page.locator('.route-card').count(),2);
+  assert.match(await page.locator('.stats-grid').innerText(),/12%/);
+  assert.match(await page.locator('.stats-grid').innerText(),/20%/);
+  await page.getByRole('button',{name:/The quick way/}).click();
+  assert.match(await page.locator('.selected-summary').innerText(),/50/);
+  await page.getByRole('combobox',{name:'Delivery window'}).selectOption('90');
+  await page.locator('.pending-note').waitFor();
+  await page.route('**/api/calculate-route',route=>route.fulfill({status:503,json:{detail:'Neo4j is unavailable.',code:'NEO4J_UNAVAILABLE'}}));
+  await page.getByRole('button',{name:'Show my ride',exact:true}).click();
+  await page.getByRole('alert').waitFor();
+  assert.match(await page.getByRole('alert').innerText(),/Neo4j/);
+  assert.equal(await page.locator('.route-card').count(),0);
+  assert.doesNotMatch(await page.locator('.stats-grid').innerText(),/12%/);
+  await page.getByRole('combobox',{name:'DROP LOCATION'}).fill('Malviya Nagar, Delhi');
+  await page.getByRole('button',{name:'Show my ride',exact:true}).click();
+  assert.match(await page.getByRole('alert').innerText(),/different/);
+  await page.getByRole('button',{name:'Swap pickup and drop locations'}).click();
+  await page.getByRole('combobox',{name:'DROP LOCATION'}).fill('Rohini, Delhi');
+  await page.route('**/api/calculate-route',route=>route.fulfill({json:{...fixture,exposure_reduction_percent:0,lower_aqi_percent:0,standard_route_id:'route-0',green_route_id:'route-0',recommended_route_id:null}}));
+  await page.getByRole('button',{name:'Show my ride',exact:true}).click();
+  await page.locator('.graph-proof').waitFor();
+  assert.match(await page.locator('.stats-grid').innerText(),/0%/);
+  await page.locator('.constraint-note').waitFor();
+  await page.screenshot({path:'artifacts/live-desktop-tested.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().right<=0.5);
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:'artifacts/live-mobile-tested.png',fullPage:true});
+  await page.getByRole('button',{name:'Demo data',exact:true}).click();
+  assert.equal(await page.locator('.route-card').count(),3);
+  assert.deepEqual(errors,[]);
+  console.log('PASS: live API binding, free-text addresses, exact request payload, AQI metrics, zero savings, route selection, changed preferences, failure clears stale results, validation, mobile layout, explicit demo switch.');
+}finally{await browser.close()}
