@@ -76,7 +76,7 @@ def create_app(settings=None, *, maps=None, air=None, database=None, gemini=None
     def fleet_suggestions(body:FleetSuggestionRequest,request:Request):
         intent=request.app.state.gemini.fleet(body.prompt)
         if intent['status']!='ready':return intent
-        result=request.app.state.routing.calculate(RouteRequest(**intent['payload']))
+        result=request.app.state.routing.calculate(RouteRequest(**intent['payload']),rider_count=intent['rider_count'])
         request.app.state.trip_facts.put(result)
         facts=request.app.state.trip_facts.facts(result['trip_id'],result['recommended_route_id'] or result['green_route_id'])
         story=None

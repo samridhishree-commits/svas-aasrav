@@ -33,3 +33,21 @@
 .fleet-welcome .outline-button { margin-top:12px; white-space:normal; text-align:left; }
 .fleet-facts { margin:22px 0; }
 .fleet-conversation { margin-bottom:24px; }
+
+.decision-log { background:#fff; border:1px solid #dfe6d9; border-radius:14px; padding:20px; width:100%; min-width:0; }
+.decision-log h2 { display:flex; align-items:center; gap:8px; }
+.decision-log .section-heading { margin-bottom:8px; }
+.log-caption,.log-pending { font-size:12px; color:#78836f; line-height:1.6; }
+.log-pending { display:flex; align-items:center; gap:10px; }
+.decision-log ol { list-style:none; padding:0; margin:12px 0; max-height:330px; overflow:auto; }
+.decision-log li { display:flex; gap:10px; padding:10px 8px; border-bottom:1px solid #edf0e8; border-left:3px solid transparent; }
+.decision-log li>svg { flex-shrink:0; margin-top:2px; color:#718763; }
+.decision-log li.warning>svg { color:#b07936; }
+.decision-log li.log-selected { background:#f0f6e9; border-left-color:#698f62; }
+.decision-log li>div { min-width:0; flex:1; }
+.log-stage { display:flex; justify-content:space-between; gap:12px; font-size:10px; text-transform:uppercase; color:#68755f; letter-spacing:.5px; }
+.log-stage time { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.decision-log li p { font-size:12px; line-height:1.6; margin:4px 0 0; color:#40533e; }
+.log-reference { font-size:11px; color:#7b856f; }
+.log-reference code { display:block; overflow-wrap:anywhere; margin-top:8px; }
+.log-reference summary { cursor:pointer; }

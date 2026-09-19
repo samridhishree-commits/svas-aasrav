@@ -11,6 +11,10 @@ try{
   await page.getByRole('button',{name:'Suggest routes',exact:true}).click();
   const response=await pending;const data=await response.json();
   assert.equal(response.status(),200);assert.equal(data.status,'ready');assert.equal(data.scheduled,false);
+  assert.equal(data.comparison.activity_log_status,'saved');
+  assert.ok(data.comparison.activity_log.some(e=>e.stage==='scheduling'));
+  await page.locator('.decision-log li').first().waitFor();
+  assert.equal(await page.locator('.decision-log li').count(),data.comparison.activity_log.length);
   assert.equal(data.intent.rider_count,5);assert.equal(data.intent.payload.has_mask,false);
   await page.locator('.route-card').first().waitFor();
   assert.equal(await page.locator('.route-card').count(),data.comparison.routes.length);

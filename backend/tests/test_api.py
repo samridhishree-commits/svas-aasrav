@@ -27,6 +27,7 @@ class FakeAir:
         return [{'aqi':150.0,'standard':'US','source':'Open-Meteo / CAMS','observed_at':datetime.now(timezone.utc).isoformat(),'grid_lat':28.6,'grid_lng':77.2} for p in points]
 
 class FakeDatabase:
+    def save_activity(self,trip_id,events):return [{'id':f"{trip_id}:{e['sequence']}",**e} for e in events]
     def close(self): pass
     def ensure_available(self): pass
     def summary(self): return []
@@ -165,3 +166,23 @@ def test_fleet_clarification_does_not_calculate_routes():
     with TestClient(create_app(settings(),maps=NoMaps(),air=FakeAir(),database=FakeDatabase(),gemini=FleetAI())) as client:
         result=client.post('/api/ai/fleet-suggestions',json={'prompt':'Some riders from Saket'}).json()
         assert result['status']=='needs_clarification'
+
+def test_decision_log_tracks_rejections_without_raw_addresses(client):
+    result=client.post('/api/calculate-route',json={'pickup':'Saket','drop':'Rohini','delivery_window_minutes':5}).json()
+    assert result['activity_log_status']=='saved'
+    events=result['activity_log']
+    assert [e['sequence'] for e in events]==list(range(1,len(events)+1))
+    assert [e['stage'] for e in events][:5]==['request','locations','routes','air_quality','ranking']
+    checks=[e for e in events if e['stage']=='route_check']
+    assert len(checks)==len(result['routes'])
+    assert all(e['level']=='warning' and 'late' in e['message'] for e in checks)
+    assert events[-1]['stage']=='decision' and 'No qualifying route' in events[-1]['message']
+    assert all('Saket' not in e['message'] and 'Rohini' not in e['message'] for e in events)
+
+def test_logging_failure_preserves_routes_without_claiming_saved():
+    class BrokenLogDatabase(FakeDatabase):
+        def save_activity(self,*args):raise ServiceError('Unavailable',503,'ACTIVITY_LOG_UNAVAILABLE')
+    service=RoutingService(settings(),FakeMaps(),FakeAir(),BrokenLogDatabase())
+    result=service.calculate(RouteRequest(pickup='Saket',drop='Rohini'))
+    assert result['routes'] and result['activity_log']==[]
+    assert result['activity_log_status']=='unavailable'

@@ -1,3 +1,4 @@
+import DecisionLog from './DecisionLog';
 import {useEffect,useRef,useState} from 'react';
 import {Sparkles,Send,Users,Clock3,ShieldCheck,CalendarClock} from 'lucide-react';
 import {suggestFleet} from './api';
@@ -31,6 +32,7 @@ export default function AdminPlanner(){
       <p className="gemini-footnote">Follow up to change a requirement. One shared journey per group. Limits use US AQI. Unmasked riders also exclude sampled AQI above 200.</p>
       {error&&<p className="form-error" role="alert">{error}</p>}
     </section>
+    {loading&&<DecisionLog loading/>}
     {result&&<>
       <div className="analyst-facts fleet-facts"><div><span>Riders</span><strong><Users size={16}/> {response.intent.rider_count}</strong></div><div><span>Mask status</span><strong>{result.constraints.has_mask?'All masked':'All unmasked'}</strong></div><div><span>Delivery window</span><strong>{result.constraints.delivery_window_minutes} min</strong></div><div><span>Sampled AQI limit</span><strong>{result.constraints.max_aqi?`Below ${result.constraints.max_aqi}`:'No requested limit'}</strong></div></div>
       {response.intent.deadline_assumed&&<p className="constraint-note">No deadline was specified. We used a 90-minute planning window; send a follow-up to change it.</p>}
@@ -38,7 +40,7 @@ export default function AdminPlanner(){
         {!result.recommended_route_id&&<div className="deadline-alert" role="alert"><ShieldCheck size={18}/><div><strong>No qualifying route</strong><p>Every available option fails at least one requirement. We have not relaxed your limits.</p></div></div>}
         <div className="route-options">{result.routes.map((r,i)=><button className={`route-card ${r.id===selected?'selected':''}`} key={r.id} onClick={()=>setSelected(r.id)} aria-pressed={r.id===selected}><div className="route-card-top"><strong>Option {i+1}</strong><span className="route-tag">{r.id===result.recommended_route_id?'LOWEST EXPOSURE':r.eligible?'QUALIFIES':'DOES NOT QUALIFY'}</span></div><p className="route-via">{r.description}</p><div className="route-metrics"><Clock3 size={14}/><b>{Math.ceil(r.duration_seconds/60)} min</b><span>{r.average_aqi} avg US AQI</span></div><p className="gemini-footnote">{Math.round(r.exposure_index).toLocaleString()} exposure index per rider</p>{r.constraint_failures.map(reason=><p key={reason} className="route-failure">{reason}</p>)}</button>)}</div>
         <button className="primary-button show-ride" disabled title="Scheduling is not available yet"><CalendarClock size={16}/>Schedule riders — coming soon</button>
-      </section><div className="map-column"><LiveRouteMap routes={result.routes} standardRouteId={result.standard_route_id} greenRouteId={result.green_route_id} selectedRouteId={selected} onSelect={setSelected} stationMode={result.aqi_source.startsWith('WAQI')} noRecommendation={!result.recommended_route_id}/></div></div>
+      </section><div className="map-column"><DecisionLog result={result} selectedRouteId={selected}/><LiveRouteMap routes={result.routes} standardRouteId={result.standard_route_id} greenRouteId={result.green_route_id} selectedRouteId={selected} onSelect={setSelected} stationMode={result.aqi_source.startsWith('WAQI')} noRecommendation={!result.recommended_route_id}/></div></div>
       {response.story&&<section className="exposure-analyst"><span className="eyebrow">WHY THIS SUGGESTION</span><h2>{response.story.headline}</h2><p>{response.story.summary}</p><p>{response.story.tradeoff}</p><p className="gemini-footnote">{response.story.caveat}</p></section>}
       <RoutePollutionProfile result={result} selectedRouteId={selected} onSelect={setSelected}/>
       <p className="gemini-footnote">Group suggestions compare the same journey for each rider; rider availability and delivery capacity are not verified. Estimated driving times exclude live traffic.</p>

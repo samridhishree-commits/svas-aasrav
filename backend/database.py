@@ -1,7 +1,7 @@
 """Neo4j is the recommendation engine, not an optional logging sink.
 
 OSRM retains responsibility for road topology. Cypher traverses each candidate's
-sample/readings graph and calculates a time + AQI-time composite routing_cost.
+sample/readings graph and ranks eligible routes by AQI-time exposure.
 """
 import threading
 from neo4j import GraphDatabase, Query
@@ -66,6 +66,20 @@ RETURN z.id AS id, z.location.latitude AS lat, z.location.longitude AS lng,
 ORDER BY affected_routes DESC, aqi DESC LIMIT 20
 """
 
+SAVE_ACTIVITY_QUERY = """
+MATCH (t:SvasTrip {id:$trip_id})
+UNWIND $events AS event
+MERGE (e:ActivityLog:SvasLog {id:$trip_id + ':' + toString(event.sequence)})
+SET e.sequence=event.sequence, e.stage=event.stage, e.message=event.message,
+    e.level=event.level, e.route_id=event.route_id,
+    e.recorded_at=datetime(event.recorded_at), e.expires_at=t.expires_at
+MERGE (t)-[:HAS_EVENT]->(e)
+WITH e ORDER BY e.sequence
+RETURN e.id AS id, e.sequence AS sequence, e.stage AS stage,
+       e.message AS message, e.level AS level, e.route_id AS route_id,
+       toString(e.recorded_at) AS recorded_at
+"""
+
 class Database:
     def __init__(self, settings):
         self.settings = settings
@@ -100,7 +114,7 @@ class Database:
                 return
             try:
                 with self.driver.session(database=self.settings.neo4j_database) as session:
-                    for label in ['SvasTrip','SvasRoute','SvasSample','SvasZone','SvasReading']:
+                    for label in ['SvasTrip','SvasRoute','SvasSample','SvasZone','SvasReading','SvasLog']:
                         session.run(f'CREATE CONSTRAINT {label.lower()}_id IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE').consume()
                 self._schema_ready = True
             except (Neo4jError, ServiceUnavailable, SessionExpired):
@@ -110,7 +124,7 @@ class Database:
         self.initialize()
         def transaction(tx):
             # Only delete expired nodes owned by this app, never user road-network data.
-            for label in ['SvasSample','SvasRoute','SvasTrip','SvasReading','SvasZone']:
+            for label in ['SvasLog','SvasSample','SvasRoute','SvasTrip','SvasReading','SvasZone']:
                 tx.run(f'MATCH (n:{label}) WHERE n.expires_at < datetime() DETACH DELETE n').consume()
             tx.run(SAVE_QUERY, trip_id=trip_id, routes=routes,
                 retention=self.settings.graph_retention_minutes).consume()
@@ -125,6 +139,16 @@ class Database:
             return rows
         except (Neo4jError, ServiceUnavailable, SessionExpired, OSError):
             raise ServiceError('Neo4j could not rank the routes. Check database permissions and connectivity.', 503, 'NEO4J_QUERY_FAILED') from None
+
+    def save_activity(self, trip_id, events):
+        try:
+            with self.driver.session(database=self.settings.neo4j_database) as session:
+                rows=session.execute_write(lambda tx:tx.run(SAVE_ACTIVITY_QUERY,trip_id=trip_id,events=events).data())
+            if len(rows)!=len(events):
+                raise ServiceError('The comparison log could not be saved completely.',503,'ACTIVITY_LOG_UNAVAILABLE')
+            return rows
+        except (Neo4jError, ServiceUnavailable, SessionExpired, OSError):
+            raise ServiceError('The comparison log could not be saved.',503,'ACTIVITY_LOG_UNAVAILABLE') from None
 
     def summary(self):
         self.ensure_available()
